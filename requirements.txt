@@ -1,0 +1,10 @@
+accelerate==0.29.3
+datasets==2.19.0
+h5py==3.11.0
+huggingface-hub==0.22.2
+scikit-learn==1.4.2
+tokenizers==0.19.1
+torch==2.3.0
+torchvision==0.18.0
+tqdm==4.66.2
+transformers==4.40.1
