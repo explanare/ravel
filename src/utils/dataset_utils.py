@@ -3,6 +3,7 @@
 import copy
 from functools import partial
 import numpy as np
+import pickle as pkl
 import re
 
 from datasets import concatenate_datasets
@@ -176,3 +177,31 @@ class HDF5Dataset(torch.utils.data.Dataset):
 
   def __len__(self):
     return len(self.index_to_keys)
+
+
+def load_entity_representation_with_label(feature_hdf5_path,
+                                          entity_attr_to_label, splits):
+  f = h5py.File(feature_hdf5_path, 'r')
+  attributes = list(entity_attr_to_label.values())[0].keys()
+  X, Y = {}, {}
+  for attr in attributes:
+    X[attr] = {
+        split: np.array(f['%s-%s' % (attr, split)][:], np.float32)
+        for split in splits
+    }
+    entities = {
+        split: pkl.loads(np.void(f['%s-%s_entity' % (attr, split)]))
+        for split in splits
+    }
+    labels = {
+        split: [entity_attr_to_label[e][attr] for e in entities[split]
+               ] for split in splits
+    }
+    sorted_unique_label = sorted(
+        set([x for split in splits for x in labels[split]]))
+    print('#unique labels=%d' % len(sorted_unique_label), sorted_unique_label)
+    Y[attr] = {
+        split: np.array([sorted_unique_label.index(x) for x in labels[split]
+                        ], np.int64) for split in labels
+    }
+  return X, Y, sorted_unique_label

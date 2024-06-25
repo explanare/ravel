@@ -7,13 +7,14 @@ from sklearn.decomposition import PCA
 import torch
 
 
-def compute_pca(features, n_components):
+def compute_principal_component(features, n_components):
   X = np.array(features)
   # Normalize input features to zero mean unit variance.
   pca_mean = np.mean(X, axis=0, keepdims=True)
   pca_std = X.var(axis=0)**0.5
   X = (X - pca_mean) / pca_std
-  print('PCA input stats:', X.min(), X.max(), X.mean(), X.std())
+  print(f'PCA normalized inputs: min={X.min():.2f} max={X.max():.2f}'
+        f' mean={X.mean():.2f}')
 
   pca = PCA(n_components=n_components)
   pca.fit(X)
@@ -26,12 +27,15 @@ class PCARotatedSpaceIntervention(pv.TrainableIntervention):
 
   def __init__(self, **kwargs):
     super().__init__()
+    self.pca_mean = torch.nn.Parameter(requires_grad=False)
+    self.pca_std = torch.nn.Parameter(requires_grad=False)
+    self.pca_components = torch.nn.Parameter(requires_grad=False)
 
-  def set_pca_params(self, pca_results):
-    self.pca_components = torch.tensor(pca_results['components'],
-                                       dtype=torch.float32)
-    self.pca_mean = torch.tensor(pca_results['mean'], dtype=torch.float32)
-    self.pca_std = torch.tensor(pca_results['std'], dtype=torch.float32)
+  def set_pca_params(self, pca_params):
+    with torch.no_grad():
+      self.pca_mean.data = pca_params['mean']
+      self.pca_std.data = pca_params['std']
+      self.pca_components.data = pca_params['components']
 
   def forward(self, base, source, subspaces=None):
     base_norm = (base - self.pca_mean) / self.pca_std

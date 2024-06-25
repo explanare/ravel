@@ -31,7 +31,7 @@ This module implements five families of interpretability methods that localize a
 ## Distributed Alignment Search (DAS)
 
 * Featurizer: An $n \times n$ orthogonal matrix learned with counterfactual signals.
-* Features: The first $k$ dimension.
+* Features: The first $k$ dimensions.
 * Training: Featurizer requires training with counterfactual signals.
 
 

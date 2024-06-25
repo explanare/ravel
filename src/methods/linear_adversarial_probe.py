@@ -21,24 +21,22 @@ from torch.optim import SGD, Adam
 import tqdm
 
 
-EVAL_CLF_PARAMS = {
-    "loss": "log",
-    "tol": 1e-4,
-    "iters_no_change": 15,
-    "alpha": 1e-4,
-    "max_iter": 25000
-}
-NUM_CLFS_IN_EVAL = 1  # change to 1 for large dataset / high dimensionality
-
-
-def init_classifier():
-  return SGDClassifier(loss=EVAL_CLF_PARAMS["loss"],
+def init_sgd_classifier(params=None):
+  if params is None:
+    params = {
+        "loss": "log_loss",
+        "tol": 1e-4,
+        "iters_no_change": 15,
+        "alpha": 1e-4,
+        "max_iter": 25000,
+    }
+  return SGDClassifier(loss=params["loss"],
                        fit_intercept=True,
-                       max_iter=EVAL_CLF_PARAMS["max_iter"],
-                       tol=EVAL_CLF_PARAMS["tol"],
-                       n_iter_no_change=EVAL_CLF_PARAMS["iters_no_change"],
+                       max_iter=params["max_iter"],
+                       tol=params["tol"],
+                       n_iter_no_change=params["iters_no_change"],
                        n_jobs=32,
-                       alpha=EVAL_CLF_PARAMS["alpha"])
+                       alpha=params["alpha"])
 
 
 def symmetric(X):
@@ -52,8 +50,9 @@ def get_score(X_train, y_train, X_dev, y_dev, P, rank):
   loss_vals = []
   accs = []
 
-  for i in range(NUM_CLFS_IN_EVAL):
-    clf = init_classifier()
+  num_clfs_in_eval = 1
+  for i in range(num_clfs_in_eval):
+    clf = init_sgd_classifier()
     clf.fit(X_train @ P_svd, y_train)
     y_pred = clf.predict_proba(X_dev @ P_svd)
     print(np.argmax(y_pred, axis=-1)[:10])
@@ -80,11 +79,8 @@ def solve_constraint(lambdas, d=1):
   iters = 0
 
   while iters < 25:
-
     mid = (theta_min + theta_max) / 2
-
     if f(mid) * f(theta_min) > 0:
-
       theta_min = mid
     else:
       theta_max = mid
