@@ -7,6 +7,7 @@ from methods.distributed_alignment_search import LowRankRotatedSpaceIntervention
 from methods.differential_binary_masking import DifferentialBinaryMasking
 import pyvene as pv
 import torch
+from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm, trange
 from transformers import get_scheduler
 from utils.dataset_utils import get_multitask_dataloader
@@ -69,6 +70,7 @@ def train_intervention(config, model, tokenizer, split_to_dataset):
   intervenable.disable_model_gradients()
 
   # Training loop.
+  tb_writer = SummaryWriter(config['log_dir'])
   epochs = config['training_epoch']
   regularization_coefficient = config['regularization_coefficient']
   optimizer_params = []
@@ -145,7 +147,11 @@ def train_intervention(config, model, tokenizer, split_to_dataset):
       scheduler.step()
       intervenable.set_zero_grad()
 
-      # Debug logging.
+      # Logging.
+      if step % 10 == 0:
+        tb_writer.add_scalar("loss", loss, scheduler._step_count)
+        tb_writer.add_scalar("accuracy", eval_metrics["accuracy"],
+                             scheduler._step_count)
       if step < 3:
         print('\nTokens to intervene:')
         intervention_locations = [
@@ -187,5 +193,6 @@ def train_intervention(config, model, tokenizer, split_to_dataset):
                 remove_invalid_token_id(
                     inputs['base_labels'][:, :num_output_tokens],
                     tokenizer.pad_token_id)))
-
+  tb_writer.flush()
+  tb_writer.close()
   return intervenable, intervenable_config

@@ -3,6 +3,13 @@
 Individual neurons participate in the representation of multiple high-level concepts. To what extent can different interpretability methods successfully disentangle these roles?  To help address this question, we present a benchmark: RAVEL (Resolving Attribute–Value Entanglements in Language Models).
 
 
+## :yarn: Quickstart
+
+A demo on how to evaluate Sparse Autoencoder (SAE), Distributed Alignment Search (DAS), and Multi-task Distributed Alignment Search (MDAS) on RAVEL with TinyLlama.
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1dc9KiVGKqwI6Etpf67OUXLey_McFPtQz)
+
+
 ## Requirements
 
 * Install dependencies in `requirements.txt`
@@ -20,7 +27,7 @@ The code has been tested against the pyvene version at commit `d29f9591ca61753d6
 
 ## Dataset
 
-RAVEL contains five types of entities, each with at least 500 instances, at least 4 attributes, and at least 50 prompt templates, as shown in the table below.
+RAVEL provides an entity-attribute dataset covering factual, linguistic, and commonsense knowledge. The dataset contains five types of entities, each with at least 500 instances, at least 4 attributes, and at least 50 prompt templates, as shown in the table below.
 
 |Entity Type|Attributes|\#Entities|\#Prompt Templates|
 |---|---|---|---|
@@ -90,15 +97,50 @@ We evaluate whether interpretability methods can disentangle related concepts, e
 
 ![An overview of the evaluation framework.](/figures/ravel-overview.svg)
 
+Each interpretability method defines a bijective featurizer $\mathcal{F}$ (e.g., a rotation matrix or sparse autoencoder), and identify a feature $F$ that represents the target concept (e.g., a linear subspace of the residual stream in a Transformer that represents "country"). We apply **interchange interventions** on the feature that localizes target concept and evaluate the causal effects.
 
-Each interpretability method defines a bijective featurizer $\mathcal{F}$ (e.g., a rotation matrix or sparse autoencoder), and identify a feature $F$ that represents the target concept (e.g., a linear subspace of the residual stream in a Transformer that represents "country"). We apply interchange interventions on the feature that localizes target concept and evaluate the causal effects.
-
-The main evaluation logic is implemented in the function [`utils.intervention_utils.eval_with_interventions`](https://github.com/explanare/ravel/blob/main/src/utils/intervention_utils.py), with each method implements its own intervention logic in [src/methods](https://github.com/explanare/ravel/blob/main/src/methods). 
+The main evaluation logic is implemented in the function [`utils.intervention_utils.eval_with_interventions`](https://github.com/explanare/ravel/blob/main/src/utils/intervention_utils.py), with each method implements its own interchange intervention logic in [src/methods](https://github.com/explanare/ravel/blob/main/src/methods). 
 
 
-### Interpretablity Methods
+### Generating Evaluation Data
 
-We evaluate the following interpretability method:
+A core opertaion in our evaluation framework is interchange intervention, which puts models into counterfactual states that allow us to isolate the causal effects of interest. Interchange intervention involves a pair of examples, which are referred to as `base` and `source`. For each pair, we specify the desired model output upon interventions, namely, whether the output should match the attribute value of the base entity or the attribute value of the source entity.
+
+
+Each evaluation example is structured as follows:
+
+```python
+{
+  'input': 'city to country: Rome is in Italy. Tokyo is in',
+  'label': ' Japan',
+  'source_input': ' in what is now southern Vancouver',
+  'source_label': ' Island',
+  'inv_label': ' Canada',
+  'split': 'city to country: Rome is in Italy. %s is in',
+  'source_split': ' in what is now southern %s',
+  'entity': 'Tokyo',
+  'source_entity': 'Vancouver'
+}
+```
+
+The input and label fields are:
+* `input`: the base example input
+* `source_input`: the source example input
+* `inv_label`: specifies the desired output when the intervention should **cause** the attribute value to change to attribute value of the source entity
+* `label`: specifies the desired output when the intervention should **isolate** the attribute, i.e., having no causal effect on the output.
+
+The rest of the fields are for tracking the intervention locations and aggreating metrics.
+
+#### Demo: Create a RAVEL instance for TinyLlama
+
+A demo on how to create evaluation data using TinyLlama as the target language model. The resulting dataset is used for evaluating the interpretability methods in the Quickstart demo.
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/16OMrDsnNkRNK0-Xa2Uy2i1QupqsbunAl)
+
+
+### Evaluating Existing Methods
+
+We have implemented five families of interpretability methods in this repo:
 * PCA
 * Sparse Autoencoder (SAE)
 * Linear adversarial probing (RLAP)
@@ -107,6 +149,12 @@ We evaluate the following interpretability method:
 * Multi-task extensions of DBM and DAS
 
 You can find implementations of these methods in the [src/methods](https://github.com/explanare/ravel/tree/main/src/methods) directory.
+
+#### Demo: Evaluate SAE, DAS, and MDAS on RAVEL-TinyLlama
+
+Check out the demo in the Quickstart!
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1dc9KiVGKqwI6Etpf67OUXLey_McFPtQz)
 
 ### Evaluating a New Method
 

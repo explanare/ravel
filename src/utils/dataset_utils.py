@@ -1,7 +1,6 @@
 """Utility functions for preprocessing and loading datasets."""
 
 import copy
-from functools import partial
 import numpy as np
 import pickle as pkl
 import re
