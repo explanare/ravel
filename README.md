@@ -104,7 +104,7 @@ The main evaluation logic is implemented in the function [`utils.intervention_ut
 
 ### Generating Evaluation Data
 
-A core opertaion in our evaluation framework is interchange intervention, which puts models into counterfactual states that allow us to isolate the causal effects of interest. Interchange intervention involves a pair of examples, which are referred to as `base` and `source`. For each pair, we specify the desired model output upon interventions, namely, whether the output should match the attribute value of the base entity or the attribute value of the source entity.
+A core operation in our evaluation framework is interchange intervention, which puts models into counterfactual states that allow us to isolate the causal effects of interest. Interchange intervention involves a pair of examples, which are referred to as `base` and `source`. For each pair, we specify the desired model output upon interventions, namely, whether the output should match the attribute value of the base entity or the attribute value of the source entity.
 
 
 Each evaluation example is structured as follows:
