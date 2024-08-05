@@ -1,5 +1,7 @@
 """Utility functions for computing metrics."""
 
+import numpy as np
+
 import torch
 from torch.nn import CrossEntropyLoss
 
@@ -48,33 +50,18 @@ def compute_cross_entropy_loss(logits, labels, pad_token_id, next_n_tokens=1):
   return loss
 
 
-def compute_disentanglement_score(data,
-                                  iso_task_indicies,
-                                  cause_task_indicies,
-                                  return_all=True):
+def compute_disentangle_score(log_data,
+                              attribute_to_iso_tasks,
+                              attribute_to_cause_tasks):
   """Compute disentanglement score from iso/cause scores."""
-  if isinstance(iso_task_indicies[0], int):
-    iso_task_indicies = [[i] for i in iso_task_indicies]
-  data = np.array(data)
-  non_empty_iso_task_indicies = [[i
-                                  for i in group
-                                  if data[0, 2 * i] != 'None']
-                                 for group in iso_task_indicies]
-  non_empty_cause_task_indicies = [
-      i for i in cause_task_indicies if data[0, 2 * i + 1] != 'None'
-  ]
-  match_base = np.sum(np.stack([
-      np.mean([data[:, 2 * i].astype(np.float32)
-               for i in group])
-      for group in non_empty_iso_task_indicies
-  ]),
-                      axis=0) / len(non_empty_iso_task_indicies)
-  match_source = np.sum(np.stack([
-      data[:, 2 * i + 1].astype(np.float32)
-      for i in non_empty_cause_task_indicies
-  ]),
-                        axis=0) / len(non_empty_cause_task_indicies)
-  if not return_all:
-    return 0.5 * (match_base + match_source)
-  return (0.5 * (match_base + match_source)
-         )[0], np.mean(match_base), np.mean(match_source)
+  match_base = np.mean([
+      np.mean([log_data[t]['metrics']['base_labels']['accuracy']
+               for t in ts if t in log_data])
+      for a, ts in attribute_to_iso_tasks.items()])
+  match_source = np.mean([
+      np.mean([log_data[t]['metrics']['labels']['accuracy']
+               for t in ts if t in log_data])
+      for a, ts in attribute_to_cause_tasks.items()])
+  return {'disentangle': 0.5 * (match_base + match_source),
+          'isolate': match_base,
+          'cause': match_source}
