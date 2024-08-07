@@ -82,7 +82,8 @@ def gen_context_test_split(metadata,
             ((source_prompt, entity),
              metadata.prompt_to_output[source_prompt % entity])
             for entity in source_entities
-            if entity in metadata.get_entities('train')
+            if (entity in metadata.get_entities('train') and
+                len(metadata.prompt_to_output[source_prompt % entity]) > 1)
         ])
       # Random sample weighted by output label distribution.
       source_task_inputs_label = [
@@ -171,7 +172,8 @@ def gen_entity_test_split(metadata,
                 if source_attr == 'Other' and
                 metadata.entity_prompt_to_split[source_prompt]['entity'] else
                 metadata.sample_entities(split, k=100))
-            if entity in metadata.get_entities(split)
+            if entity in metadata.get_entities(split) and (
+            len(metadata.prompt_to_output[source_prompt % entity]) > 1)
         ]
         # Random sample need to be weighted by output label distribution
         source_task_inputs_label = [
@@ -252,7 +254,8 @@ def gen_train_split(metadata, extract_label_fn, filter_example_fn, first_n=256):
     for (p, a), v in base_task_inputs:
       source_input_candiates = [
           x for x in source_task_inputs
-          if filter_example_fn(v, metadata.prompt_to_output[p % x[0][1]])
+          if filter_example_fn(v, metadata.prompt_to_output[p % x[0][1]]) and (
+            len(x[1]) > 1)
       ]
       split_to_raw_example[f'{attr}-{target_split}'].extend([{
           'input': p % a,

@@ -189,4 +189,4 @@ class InterventionWithNewFeaturizer(pv.TrainableIntervention):
     return output
 ```
 
-You can find examples of interventions with featurizers in [scr/methods](https://github.com/explanare/ravel/blob/main/src/methods), where `AutoencoderIntervention` is an example that specifies which subset of features to intervene, while `LowRankRotatedSpaceIntervention` is an example that implicitly defines features through the low-rank rotation matrix.
+You can find examples of interventions with featurizers in [src/methods](https://github.com/explanare/ravel/blob/main/src/methods), where `AutoencoderIntervention` is an example that specifies which subset of features to intervene, while `LowRankRotatedSpaceIntervention` is an example that implicitly defines features through the low-rank rotation matrix.

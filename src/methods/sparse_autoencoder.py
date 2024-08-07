@@ -8,7 +8,7 @@ import torch
 
 
 class SparseAutoencoder(torch.nn.Module):
-  """Sparse Autoencoder with a two-layer encoder and a two-layer decoder."""
+  """Sparse Autoencoder with a single-layer encoder and a single-layer decoder."""
 
   def __init__(self, embed_dim, latent_dim, device):
     super().__init__()

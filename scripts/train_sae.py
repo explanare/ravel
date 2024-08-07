@@ -28,9 +28,9 @@ def train_sae(config, train_dataloader, val_dataloader):
                                   config['latent_dim'],
                                   device=device)
 
-  optimizer = transformers.AdamW(autoencoder.parameters(),
-                                 lr=config['learning_rate'],
-                                 weight_decay=config['weight_decay'])
+  optimizer = AdamW(autoencoder.parameters(),
+                    lr=config['learning_rate'],
+                    weight_decay=config['weight_decay'])
   num_epochs = config['num_epochs']
   num_training_steps = num_epochs * len(train_dataloader)
   lr_scheduler = get_scheduler(
