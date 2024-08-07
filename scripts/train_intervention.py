@@ -66,12 +66,11 @@ def train_intervention(config, model, tokenizer, split_to_dataset):
       config['intervenable_config']['intervenable_interventions_type'],
       intervention_dimension=config['intervention_dimension'])
   intervenable = pv.IntervenableModel(intervenable_config, model)
-  intervenable.set_device("cuda")
+  intervenable.set_device(model.device)
   intervenable.disable_model_gradients()
 
-  # Training loop.
-  tb_writer = SummaryWriter(config['log_dir'])
-  epochs = config['training_epoch']
+  # Set up optimizer.
+  num_epoch = config['training_epoch']
   regularization_coefficient = config['regularization_coefficient']
   optimizer_params = []
   for k, v in intervenable.interventions.items():
@@ -84,11 +83,25 @@ def train_intervention(config, model, tokenizer, split_to_dataset):
                                 weight_decay=0)
   scheduler = get_scheduler('constant',
                             optimizer=optimizer,
-                            num_training_steps=len(train_dataloader))
+                            num_training_steps=num_epoch *
+                            len(train_dataloader))
   print("Model trainable parameters: ", pv.count_parameters(intervenable.model))
   print("Intervention trainable parameters: ", intervenable.count_parameters())
-  train_iterator = trange(0, int(epochs), desc="Epoch")
+  temperature_schedule = None
+  if (config['intervenable_config']['intervenable_interventions_type'] ==
+      DifferentialBinaryMasking):
+    temperature_start, temperature_end = config['temperature_schedule']
+    temperature_schedule = torch.linspace(temperature_start, temperature_end,
+                                          num_epoch * len(train_dataloader) +
+                                          1).to(torch.bfloat16).to(model.device)
+    for k, v in intervenable.interventions.items():
+      if isinstance(v[0], DifferentialBinaryMasking):
+        intervenable.interventions[k][0].set_temperature(
+            temperature_schedule[scheduler._step_count])
 
+  # Training loop.
+  train_iterator = trange(0, int(num_epoch), desc="Epoch")
+  tb_writer = SummaryWriter(config['log_dir'])
   num_output_tokens = config['max_output_tokens']
   for epoch in train_iterator:
     epoch_iterator = tqdm(train_dataloader,
@@ -115,6 +128,7 @@ def train_intervention(config, model, tokenizer, split_to_dataset):
                    'source_position_ids'):
           inputs[key] = inputs[key].to(model.device)
 
+      # Run training step.
       counterfactual_outputs = train_intervention_step(
           intervenable,
           inputs,
@@ -136,6 +150,9 @@ def train_intervention(config, model, tokenizer, split_to_dataset):
             DifferentialBinaryMasking):
           loss += regularization_coefficient * intervenable.interventions[k][
               0].get_sparsity_loss()
+          intervenable.interventions[k][0].set_temperature(
+              temperature_schedule[scheduler._step_count])
+
       aggreated_stats['loss'].append(loss.item())
       aggreated_stats['acc'].append(eval_metrics["accuracy"])
       epoch_iterator.set_postfix(
@@ -149,6 +166,8 @@ def train_intervention(config, model, tokenizer, split_to_dataset):
 
       # Logging.
       if step % 10 == 0:
+        tb_writer.add_scalar("lr",
+                             scheduler.get_last_lr()[0], scheduler._step_count)
         tb_writer.add_scalar("loss", loss, scheduler._step_count)
         tb_writer.add_scalar("accuracy", eval_metrics["accuracy"],
                              scheduler._step_count)
