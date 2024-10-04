@@ -190,3 +190,47 @@ class InterventionWithNewFeaturizer(pv.TrainableIntervention):
 ```
 
 You can find examples of interventions with featurizers in [src/methods](https://github.com/explanare/ravel/blob/main/src/methods), where `AutoencoderIntervention` is an example that specifies which subset of features to intervene, while `LowRankRotatedSpaceIntervention` is an example that implicitly defines features through the low-rank rotation matrix.
+
+
+# Citation
+
+If you use our dataset or method implmentations, please consider citing the following work. For each interpretablity method, please also consider citing their original papers -- you can find a list of related work in each method section in our paper.
+
+```
+@inproceedings{huang-etal-2024-ravel,
+    title = "{RAVEL}: Evaluating Interpretability Methods on Disentangling Language Model Representations",
+    author = "Huang, Jing  and
+      Wu, Zhengxuan  and
+      Potts, Christopher  and
+      Geva, Mor  and
+      Geiger, Atticus",
+    editor = "Ku, Lun-Wei  and
+      Martins, Andre  and
+      Srikumar, Vivek",
+    booktitle = "Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)",
+    month = aug,
+    year = "2024",
+    address = "Bangkok, Thailand",
+    publisher = "Association for Computational Linguistics",
+    url = "https://aclanthology.org/2024.acl-long.470",
+    pages = "8669--8687",
+}
+
+```
+
+If you use the `pyvene` framework, please also consider citing the following:
+
+```
+@inproceedings{wu-etal-2024-pyvene,
+    title = "pyvene: A Library for Understanding and Improving {P}y{T}orch Models via Interventions",
+    author = "Wu, Zhengxuan and Geiger, Atticus and Arora, Aryaman and Huang, Jing and Wang, Zheng and Goodman, Noah and Manning, Christopher and Potts, Christopher",
+    editor = "Chang, Kai-Wei and Lee, Annie and Rajani, Nazneen",
+    booktitle = "Proceedings of the 2024 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies (Volume 3: System Demonstrations)",
+    month = jun,
+    year = "2024",
+    address = "Mexico City, Mexico",
+    publisher = "Association for Computational Linguistics",
+    url = "https://aclanthology.org/2024.naacl-demo.16",
+    pages = "158--165",
+}
+```
