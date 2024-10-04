@@ -96,13 +96,26 @@ def is_llama_tokenizer(tokenizer):
   return isinstance(tokenizer, LlamaTokenizerFast)
 
 
+def get_label_offset(tokenizer):
+  if is_llama_tokenizer(tokenizer):
+    return 3
+  elif 'Llama-3' in tokenizer.name_or_path:
+    # Tokenizer with the BOS token.
+    return 1
+  elif 'gemma' in tokenizer.name_or_path:
+    # Tokenizer with the BOS token.
+    return 1
+  return 0
+
+
 def get_dataloader(eval_dataset,
                    tokenizer,
                    batch_size,
                    prompt_max_length,
                    output_max_length,
                    first_n=1,
-                   drop_last=False):
+                   drop_last=False,
+                   shuffle=True):
   eval_dataset = eval_dataset.map(
       lambda x: preproc_tokenize(tokenizer,
                                  prompt_max_length,
@@ -111,12 +124,12 @@ def get_dataloader(eval_dataset,
                                  extra_input_to_tokenize=['source_input'],
                                  extra_label_to_tokenize=['inv_label']))
   eval_dataset = eval_dataset.map(lambda x: kept_first_n_label_token(
-      x, first_n, padding_offset=3 if is_llama_tokenizer(tokenizer) else 0))
+      x, first_n, padding_offset=get_label_offset(tokenizer)))
   eval_dataset = eval_dataset.with_format("torch")
   eval_dataloader = DataLoader(eval_dataset,
                                batch_size=batch_size,
                                drop_last=drop_last,
-                               shuffle=True)
+                               shuffle=shuffle)
   return eval_dataloader
 
 
@@ -138,7 +151,7 @@ def get_multitask_dataloader(eval_dataset,
       x,
       cause_tasks,
       first_n,
-      padding_offset=3 if is_llama_tokenizer(tokenizer) else 0))
+      padding_offset=get_label_offset(tokenizer)))
   eval_dataset = eval_dataset.with_format("torch")
   eval_dataloader = DataLoader(eval_dataset,
                                batch_size=batch_size,

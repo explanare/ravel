@@ -14,26 +14,35 @@ import torch
 from tqdm.auto import tqdm
 from torch.utils.data import DataLoader
 from torch.nn import CrossEntropyLoss
-from utils.dataset_utils import get_dataloader, is_llama_tokenizer
+from utils.dataset_utils import get_dataloader, get_label_offset
 
 
 def get_intervention_config(model_type,
-                            intervention_representation,
+                            intervention_representations,
                             layers,
                             intervention_type,
+                            intervention_units=None,
                             intervention_dimension=None,
                             num_unit=1):
   if isinstance(layers, int):
     layers = [layers]
+  if isinstance(intervention_representations, str):
+    intervention_representations = [intervention_representations] * len(layers)
+  if isinstance(intervention_units, str) or intervention_units is None:
+    intervention_units = [
+        intervention_units if intervention_units is not None else 'pos']
+  assert len(intervention_representations) == len(layers)
+  assert len(intervention_representations) == len(intervention_units)
   inv_config = pv.IntervenableConfig(
       model_type=model_type,
       representations=[
           pv.RepresentationConfig(
               layer,  # layer
-              intervention_representation,  # intervention repr
-              "pos",  # intervention unit
+              intervention_representations[i],  # intervention repr
+              intervention_units[i],  # intervention unit
               num_unit,  # max number of unit
-              intervention_dimension) for layer in layers
+              intervention_dimension)
+          for i, layer in enumerate(layers)
       ],
       intervention_types=intervention_type,
   )
@@ -110,7 +119,7 @@ def eval_with_interventions(intervenable,
                             debug_print=False,
                             forward_only=False):
   split_to_eval_metrics = {}
-  padding_offset = 3 if is_llama_tokenizer(tokenizer) else 0
+  padding_offset = get_label_offset(tokenizer)
   num_inv = len(intervenable.interventions)
   for split in split_to_dataset:
     # Asssume all inputs have the same max length.
@@ -344,7 +353,8 @@ def load_intervenable(base_model, pretrained_weight_or_path):
           f'layer.{layer}.comp.block_output.unit.pos.nunit.1#0'] = rotate_layer
   layers = [int(k.split('.')[1]) for k in rotate_layers]
   inv_config = get_intervention_config(type(base_model), "block_output", layers,
-                                       LowRankRotatedSpaceIntervention, 0)
+                                       LowRankRotatedSpaceIntervention,
+                                       intervention_dimension=0)
   intervenable = pv.IntervenableModel(inv_config, base_model)
   intervenable.set_device("cuda")
   intervenable.disable_model_gradients()
