@@ -23,12 +23,13 @@ def train_intervention(config, model, tokenizer, split_to_dataset):
           split_to_dataset[f'{task_name}-{split}'].select(
               np.random.choice(
                   min(
-                      len(split_to_dataset[f'{task_name}-{split}']) - 1,
+                      len(split_to_dataset[f'{task_name}-{split}']),
                       config['cause_task_sample_size']),
-                  size=config['iso_task_sample_size'] if
+                  size=min(config['iso_task_sample_size'],
+                           len(split_to_dataset[f'{task_name}-{split}'])) if
                   config['training_tasks'][task_name] == 'match_base' else min(
-                      len(split_to_dataset[f'{task_name}-{split}']) -
-                      1, config['cause_task_sample_size']),
+                      len(split_to_dataset[f'{task_name}-{split}']),
+                      config['cause_task_sample_size']),
                   replace=False))
           for task_name in config['training_tasks']
           if f'{task_name}-{split}' in split_to_dataset
@@ -78,6 +79,8 @@ def train_intervention(config, model, tokenizer, split_to_dataset):
       optimizer_params += [{'params': v[0].rotate_layer.parameters()}]
     elif isinstance(v[0], DifferentialBinaryMasking):
       optimizer_params += [{'params': v[0].parameters()}]
+    else:
+      raise NotImplementedError
   optimizer = torch.optim.AdamW(optimizer_params,
                                 lr=config['init_lr'],
                                 weight_decay=0)
@@ -112,7 +115,7 @@ def train_intervention(config, model, tokenizer, split_to_dataset):
     for step, inputs in enumerate(epoch_iterator):
       for k, v in inputs.items():
         if v is not None and isinstance(v, torch.Tensor):
-          inputs[k] = v.to("cuda")
+          inputs[k] = v.to(model.device)
       b_s = inputs["input_ids"].shape[0]
       position_ids = {
           f'{prefix}position_ids':
