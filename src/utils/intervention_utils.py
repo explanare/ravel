@@ -327,7 +327,8 @@ def load_intervenable_with_autoencoder(model, autoencoder, inv_dims, layer):
   return intervenable
 
 
-def load_intervenable(base_model, pretrained_weight_or_path):
+def load_intervenable(base_model, pretrained_weight_or_path,
+                      intervention_representations=None):
   """Load interventions that involve a linear transformation."""
 
   run_name = pretrained_weight_or_path.rsplit('.', 1)[0].rsplit('/', 1)[-1]
@@ -352,9 +353,11 @@ def load_intervenable(base_model, pretrained_weight_or_path):
       rotate_layers[
           f'layer.{layer}.comp.block_output.unit.pos.nunit.1#0'] = rotate_layer
   layers = [int(k.split('.')[1]) for k in rotate_layers]
-  inv_config = get_intervention_config(type(base_model), "block_output", layers,
-                                       LowRankRotatedSpaceIntervention,
-                                       intervention_dimension=0)
+  intervention_representations = intervention_representations or "block_output"
+  inv_config = get_intervention_config(
+      type(base_model), intervention_representations, layers,
+      LowRankRotatedSpaceIntervention,
+      intervention_dimension=0)
   intervenable = pv.IntervenableModel(inv_config, base_model)
   intervenable.set_device("cuda")
   intervenable.disable_model_gradients()
