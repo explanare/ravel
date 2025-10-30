@@ -3,6 +3,17 @@
 Individual neurons participate in the representation of multiple high-level concepts. To what extent can different interpretability methods successfully disentangle these roles?  To help address this question, we present a benchmark: RAVEL (Resolving Attribute–Value Entanglements in Language Models).
 
 
+## :loudspeaker: Updates
+
+* RAVEL has been integrated into multiple mech interp benchmarks! Besides using this repo, you can also evaluate your methods on RAVEL through one of the following interfaces:
+  * [MIB](https://huggingface.co/spaces/mib-bench/leaderboard): A mechanistic interpretability benchmark with two tracks. RAVEL is part of the Causal Variable Localization Track.  
+  * [SAEBench](https://www.neuronpedia.org/sae-bench/info): A comprehensive evaluation suite that measures SAE performance across four fundamental capabilities. RAVEL is used to evaluate the "Feature Disentanglement" capability.
+  * [SAE-RAVEL](https://github.com/MaheepChaudhary/SAE-Ravel): A benchmark that evaluates different open-source Sparse Autoencoders for GPT-2 small.
+
+* RAVEL is available on HuggingFace now at [hij/ravel](https://huggingface.co/datasets/hij/ravel)!
+  * The HuggingFace version includes 3000+ cities and their attributes, along with the Wikipedia URLs where the attribute values are sourced from. We hope this would allow researchers to further expand the attributes in the dataset.
+
+
 ## :yarn: Quickstart
 
 A demo on how to evaluate Sparse Autoencoder (SAE), Distributed Alignment Search (DAS), and Multi-task Distributed Alignment Search (MDAS) on RAVEL with TinyLlama.
